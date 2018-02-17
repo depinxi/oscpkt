@@ -54,6 +54,8 @@
 # include <netinet/in.h>
 # include <netdb.h>
 # include <sys/time.h>
+# include <unistd.h>
+# include <arpa/inet.h>
 #endif
 #include <cstring>
 #include <cstdio>
