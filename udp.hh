@@ -1,3 +1,4 @@
+// clang-format off
 /*
   This file provides a dumb c++ wrapper for sending OSC packets over UDP.
 */
@@ -212,6 +213,47 @@ struct UdpSocket {
 
   void setErr(const std::string &msg) { 
     if (error_message.empty()) error_message = msg;
+  }
+
+  bool broadcastTo(const std::string &port) {
+    return broadcastTo(std::stoi(port));
+  }
+  bool broadcastTo(int port) {
+    close();
+    error_message.clear();
+
+    handle = socket(AF_INET, SOCK_DGRAM, 0);
+    if (handle == -1) {
+      setErr("failed to open socket");
+      return false;
+    }
+
+    int b = 1;
+    if (setsockopt(handle, SOL_SOCKET, SO_BROADCAST, &b, sizeof(b)) == -1) {
+      setErr("broadcast option failed");
+      return false;
+    }
+    if (b != 1) {
+      setErr("broadcast option failed");
+      return false;
+    }
+
+    memset(&remote_addr.addr(), 0, remote_addr.actualLen());
+    reinterpret_cast<struct sockaddr_in *>(&remote_addr.addr())->sin_family =
+        AF_INET;
+    reinterpret_cast<struct sockaddr_in *>(&remote_addr.addr())->sin_port =
+        htons(port);
+    reinterpret_cast<struct sockaddr_in *>(&remote_addr.addr())->sin_addr.s_addr =
+        inet_addr("255.255.255.255");
+
+    memset(&local_addr.addr(), 0, local_addr.actualLen());
+    socklen_t len = (socklen_t)local_addr.maxLen();
+    if (getsockname(handle, &local_addr.addr(), &len) == -1) {
+      setErr("get local address info failed");
+      return false;
+    }
+
+    return true;
   }
 
   /** wait for the next datagram to arrive on our bound socket. Return
