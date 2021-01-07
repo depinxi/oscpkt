@@ -18,10 +18,10 @@ using std::cout;
 using std::cerr;
 
 #ifdef OSCPKT_TEST_UDP
-#include "udp.hh"
+#include "oscpkt/udp.hh"
 #endif
 
-#include "oscpkt.hh"
+#include "oscpkt/oscpkt.hh"
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
