@@ -406,7 +406,7 @@ public:
     strcpy(storage.getBytes(s.size()+1), s.c_str());
     return *this;
   }
-  Message &pushBlob(void *ptr, size_t num_bytes) {
+  Message &pushBlob(const void *ptr, size_t num_bytes) {
     assert(num_bytes < 2147483647); // insane values are not welcome
     type_tags += TYPE_TAG_BLOB; 
     arguments.push_back(std::make_pair(storage.size(), num_bytes+4));
