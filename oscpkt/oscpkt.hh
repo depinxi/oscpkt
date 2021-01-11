@@ -365,13 +365,13 @@ public:
     clear();
     storage.assign((const char*)ptr, (const char*)ptr + sz);
     const char *address_beg = storage.begin();
-    const char *address_end = (const char*)memchr(address_beg, 0, storage.end()-address_beg);
+    const char *address_end = (const char*)memchr(address_beg, 0, (size_t) (storage.end()-address_beg));
     if (!address_end || !isZeroPaddingCorrect(address_end+1) || address_beg[0] != '/') { 
       OSCPKT_SET_ERR(MALFORMED_ADDRESS_PATTERN); return; 
     } else address.assign(address_beg, address_end);
 
     const char *type_tags_beg = ceil4(address_end+1);
-    const char *type_tags_end = (const char*)memchr(type_tags_beg, 0, storage.end()-type_tags_beg);
+    const char *type_tags_end = (const char*)memchr(type_tags_beg, 0, (size_t) (storage.end()-type_tags_beg));
     if (!type_tags_end || !isZeroPaddingCorrect(type_tags_end+1) || type_tags_beg[0] != ',') { 
       OSCPKT_SET_ERR(MALFORMED_TYPE_TAGS); return; 
     } else type_tags.assign(type_tags_beg+1, type_tags_end); // we do not copy the initial ','
@@ -449,12 +449,14 @@ private:
       case TYPE_TAG_INT64: 
       case TYPE_TAG_DOUBLE: sz = 8; break;
       case TYPE_TAG_STRING: {
-        const char *q = (const char*)memchr(p, 0, storage.end()-p);
+        const char *q = (const char*)memchr(p, 0, (size_t)(storage.end()-p));
         if (!q) OSCPKT_SET_ERR(MALFORMED_ARGUMENTS);
-        else sz = (q-p)+1;
+        else sz = (size_t)((q-p)+1);
       } break;
       case TYPE_TAG_BLOB: {
-        if (p == storage.end()) { OSCPKT_SET_ERR(MALFORMED_ARGUMENTS); return 0; }
+        if (p == storage.end()) {
+        	OSCPKT_SET_ERR(MALFORMED_ARGUMENTS);
+        	return 0; }
         sz = 4+bytes2pod<uint32_t>(p);
       } break;
       default: {
@@ -553,7 +555,7 @@ private:
         OSCPKT_SET_ERR(INVALID_BUNDLE);
       }
     } else {
-      messages.push_back(Message(beg, end-beg, time_tag));
+      messages.push_back(Message(beg, (size_t) (end-beg), time_tag));
       if (!messages.back().isOk()) OSCPKT_SET_ERR(messages.back().getErr());
     }
   }
@@ -584,7 +586,9 @@ public:
   PacketWriter &startBundle(TimeTag ts = TimeTag::immediate()) {
     char *p;
     if (bundles.size()) storage.getBytes(4); // hold the bundle size
-    p = storage.getBytes(8); strcpy(p, "#bundle"); bundles.push_back(p - storage.begin());
+    p = storage.getBytes(8);
+    strcpy(p, "#bundle");
+    bundles.push_back((size_t)(p - storage.begin()));
     p = storage.getBytes(8); pod2bytes<uint64_t>(ts, p);
     return *this;
   }
@@ -674,7 +678,7 @@ inline const char *internalPatternMatch(const char *pattern, const char *path) {
         ++p;
         q = strchr(p, ',');
         if (q == 0 || q > end) q = end;
-        if (strncmp(p, path, q-p)==0) {
+        if (strncmp(p, path, (size_t)(q-p))==0) {
           path += (q-p); p = end+1; match = true;
         } else p=q;
       } while (q != end && !match);
